@@ -1,29 +1,22 @@
-export default async function handler(request) {
+module.exports = async (req, res) => {
   const FIREBASE_URL = process.env.FIREBASE_DATABASE_URL;
   const FIREBASE_SECRET = process.env.FIREBASE_SECRET;
 
+  if (!FIREBASE_URL || !FIREBASE_SECRET) {
+    return res.status(500).json({ error: 'Missing env vars' });
+  }
+
   try {
-    const response = await fetch(`${FIREBASE_URL}/scores.json?auth=${FIREBASE_SECRET}&orderBy="score"&limitToLast=10`);
+    const response = await fetch(`${FIREBASE_URL}/scores.json?auth=${FIREBASE_SECRET}`);
     
     if (!response.ok) throw new Error('Failed to fetch');
     
     const data = await response.json();
-    const scores = [];
-    
-    for (const key in data) {
-      scores.push(data[key]);
-    }
-    
+    const scores = Object.values(data || {});
     scores.sort((a, b) => b.score - a.score);
     
-    return new Response(JSON.stringify(scores), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.json(scores.slice(0, 10));
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
-}
-
+};
