@@ -10,14 +10,21 @@ export default async function handler(request) {
   try {
     const data = await request.json();
     
+    // 添加超时控制
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5秒超时
+    
     const response = await fetch(`${FIREBASE_URL}/${DB_PATH}.json?auth=${FIREBASE_SECRET}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...data,
         timestamp: Date.now()
-      })
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
 
     if (!response.ok) throw new Error('Failed to save');
     
