@@ -607,6 +607,11 @@
         }
 
         async function submitScore() {
+            console.log('submitScore called');
+            console.log('playerName:', playerName);
+            console.log('score:', score);
+            console.log('gameMode:', gameMode);
+            
             try {
                 const response = await fetch('/api/submit-score', {
                     method: 'POST',
@@ -621,16 +626,21 @@
                     })
                 });
                 
+                console.log('response:', response);
+                
                 if (response.ok) {
                     alert('分数提交成功！');
+                    gameOverScreen.style.display = 'none';
                     restartGame();
                 } else {
-                    throw new Error('提交失败');
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error('提交失败: ' + errorText);
                 }
             } catch (error) {
+                console.error('Submit error:', error);
                 alert('提交失败: ' + error.message);
             }
-            gameOverScreen.style.display = 'none';
         }
 
         function showLeaderboard() {
