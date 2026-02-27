@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const ENV = process.env.ENV || 'production'; // 'preview' 或 'production'
 
 export default async function handler(req, res) {
   try {
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
     const { data, error } = await supabase
       .from('scores')
       .select('*')
+      .eq('env', ENV) // 只查询当前环境的数据
       .order('score', { ascending: false })
       .limit(50);
 

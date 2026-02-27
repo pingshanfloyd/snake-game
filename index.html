@@ -455,6 +455,9 @@
         }
 
         function setGameMode(mode) {
+            // 游戏中禁止切换模式
+            if (gameRunning || gameStarted) return;
+            
             gameMode = mode;
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(mode === 'casual' ? 'modeCasual' : 'modeRanked').classList.add('active');
@@ -473,7 +476,10 @@
         }
 
         function setDifficulty(level) {
+            // 游戏中禁止切换难度
+            if (gameRunning || gameStarted) return;
             if (gameMode === 'ranked') return;
+            
             nextDifficulty = level;
             document.querySelectorAll('#diff1, #diff2, #diff3').forEach(btn => btn.classList.remove('active'));
             document.getElementById('diff' + level).classList.add('active');
@@ -484,7 +490,10 @@
         }
 
         function setWallMode(enabled) {
+            // 游戏中禁止切换穿墙
+            if (gameRunning || gameStarted) return;
             if (gameMode === 'ranked') return;
+            
             nextWallMode = enabled;
             document.querySelectorAll('#wallOff, #wallOn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(enabled ? 'wallOn' : 'wallOff').classList.add('active');

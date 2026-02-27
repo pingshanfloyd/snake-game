@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const ENV = process.env.ENV || 'production'; // 'preview' 或 'production'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -26,6 +27,7 @@ export default async function handler(req, res) {
         difficulty_name: data.difficultyName,
         wall_mode: data.wallMode,
         game_mode: data.gameMode,
+        env: ENV, // 区分 preview 和 production
         created_at: new Date().toISOString()
       }]);
 
