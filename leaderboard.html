@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>贪吃蛇 - 排行榜</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+            padding-top: calc(env(safe-area-inset-top) + 10px);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .container { 
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            padding: 10px;
+        }
+        h1 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 1.6rem;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        .mode-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .mode-tab {
+            background: rgba(0, 255, 136, 0.15);
+            border: 2px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .mode-tab:hover, .mode-tab:active {
+            background: rgba(0, 255, 136, 0.3);
+        }
+        .mode-tab.active {
+            background: #00ff88;
+            color: #1a1a2e;
+        }
+        .leaderboard-wrapper {
+            width: 100%;
+            max-height: 55vh;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .loading {
+            color: #00ff88;
+            font-size: 1rem;
+            padding: 20px;
+        }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            color: #fff;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        .leaderboard-item:nth-child(1) { color: #ffd700; font-weight: bold; }
+        .leaderboard-item:nth-child(2) { color: #c0c0c0; }
+        .leaderboard-item:nth-child(3) { color: #cd7f32; }
+        .leaderboard-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .leaderboard-name {
+            font-weight: bold;
+        }
+        .leaderboard-mode {
+            font-size: 0.65rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .leaderboard-score {
+            font-weight: bold;
+            color: #00ff88;
+            font-size: 1rem;
+        }
+        .back-btn {
+            background: #00ff88;
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 25px;
+            font-size: 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 5px;
+        }
+        .back-btn:hover, .back-btn:active {
+            background: #00cc6a;
+            transform: scale(1.05);
+        }
+        .empty-msg {
+            color: #888;
+            padding: 30px;
+            font-size: 0.9rem;
+        }
+        
+        @media (min-width: 768px) {
+            body { justify-content: center; padding-top: 0; }
+            h1 { font-size: 2.2rem; margin-bottom: 15px; }
+            .mode-tab { font-size: 1.1rem; padding: 10px 30px; }
+            .leaderboard-wrapper { max-height: 50vh; padding: 15px; }
+            .leaderboard-item { font-size: 1rem; padding: 10px 12px; }
+            .leaderboard-mode { font-size: 0.75rem; }
+            .leaderboard-score { font-size: 1.2rem; }
+            .back-btn { font-size: 1.1rem; padding: 12px 30px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 排行榜</h1>
+        
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('casual')" id="tabCasual">娱乐模式</button>
+            <button class="mode-tab" onclick="switchMode('ranked')" id="tabRanked">天梯模式</button>
+        </div>
+        
+        <div class="leaderboard-wrapper" id="leaderboardWrapper">
+            <div class="loading">加载中...</div>
+        </div>
+        
+        <button class="back-btn" onclick="goBack()">返回游戏</button>
+    </div>
+
+    <script>
+        let currentMode = 'casual';
+        let allScores = [];
+
+        async function loadLeaderboard() {
+            const wrapper = document.getElementById('leaderboardWrapper');
+            wrapper.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const response = await fetch('/api/get-scores');
+                allScores = await response.json();
+                renderLeaderboard();
+            } catch (error) {
+                wrapper.innerHTML = '<div class="empty-msg">加载失败: ' + error.message + '</div>';
+            }
+        }
+
+        function renderLeaderboard() {
+            const wrapper = document.getElementById('leaderboardWrapper');
+            const modeScores = allScores
+                .filter(s => s.gameMode === currentMode || (!s.gameMode && currentMode === 'casual'))
+                .slice(0, 20); // 只显示前20
+            
+            if (modeScores.length === 0) {
+                wrapper.innerHTML = '<div class="empty-msg">暂无数据</div>';
+                return;
+            }
+            
+            wrapper.innerHTML = '';
+            modeScores.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item';
+                
+                if (currentMode === 'casual') {
+                    const wallText = item.wallMode ? '穿' : '撞';
+                    div.innerHTML = `
+                        <div class="leaderboard-info">
+                            <span class="leaderboard-name">${index + 1}. ${item.name}</span>
+                            <span class="leaderboard-mode">${item.difficultyName} | ${wallText}墙</span>
+                        </div>
+                        <span class="leaderboard-score">${item.score}分</span>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="leaderboard-info">
+                            <span class="leaderboard-name">${index + 1}. ${item.name}</span>
+                        </div>
+                        <span class="leaderboard-score">${item.score}分</span>
+                    `;
+                }
+                wrapper.appendChild(div);
+            });
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(mode === 'casual' ? 'tabCasual' : 'tabRanked').classList.add('active');
+            renderLeaderboard();
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        loadLeaderboard();
+    </script>
+</body>
+</html>

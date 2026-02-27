@@ -1,30 +1,40 @@
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+export default async function handler(request) {
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
   }
 
   const FIREBASE_URL = process.env.FIREBASE_DATABASE_URL;
   const FIREBASE_SECRET = process.env.FIREBASE_SECRET;
-
-  // 检查环境变量
-  if (!FIREBASE_URL || !FIREBASE_SECRET) {
-    return res.status(500).json({ error: 'Missing env vars' });
-  }
+  const DB_PATH = process.env.DB_PATH || 'scores';
 
   try {
-    const response = await fetch(`${FIREBASE_URL}/scores.json?auth=${FIREBASE_SECRET}`, {
+    const data = await request.json();
+    
+    // 添加超时控制
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // 5秒超时
+    
+    const response = await fetch(`${FIREBASE_URL}/${DB_PATH}.json?auth=${FIREBASE_SECRET}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ...req.body,
+        ...data,
         timestamp: Date.now()
-      })
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeout);
 
     if (!response.ok) throw new Error('Failed to save');
     
-    return res.json({ success: true });
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-};
+}
