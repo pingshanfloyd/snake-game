@@ -328,8 +328,16 @@
             
             <div class="modal" id="nameModal">
                 <h2>欢迎!</h2>
-                <input type="text" id="playerName" placeholder="输入你的昵称" maxlength="10">
-                <button class="action-btn" onclick="saveName()">开始游戏</button>
+                <input type="text" id="playerNameInput" placeholder="输入你的昵称" maxlength="10">
+                <button class="action-btn" onclick="saveName()">保存昵称</button>
+            </div>
+            
+            <div class="modal" id="startModal">
+                <h2>准备好了吗?</h2>
+                <div style="color: #888; font-size: 0.8rem; margin-bottom: 10px;">
+                    <div id="startModeInfo">娱乐模式 - 普通 | 穿墙</div>
+                </div>
+                <button class="action-btn" onclick="startGame()">开始游戏</button>
             </div>
             
             <div class="game-over" id="gameOver">
@@ -363,6 +371,7 @@
         const highScoreElement = document.getElementById('highScore');
         const userInfoElement = document.getElementById('userInfo');
         const nameModal = document.getElementById('nameModal');
+        const startModal = document.getElementById('startModal');
         const gameOverScreen = document.getElementById('gameOver');
         const finalScoreElement = document.getElementById('finalScore');
         const casualSettings = document.getElementById('casualSettings');
@@ -411,18 +420,34 @@
                 nameModal.style.display = 'flex';
             } else {
                 userInfoElement.textContent = '玩家: ' + playerName;
-                startGame();
+                showStartModal();
+            }
+        }
+
+        function showStartModal() {
+            updateStartModalInfo();
+            startModal.style.display = 'flex';
+        }
+
+        function updateStartModalInfo() {
+            const modeInfo = document.getElementById('startModeInfo');
+            if (gameMode === 'casual') {
+                const diffName = difficultySettings[nextDifficulty].name;
+                const wallText = nextWallMode ? '穿墙' : '撞墙';
+                modeInfo.textContent = `娱乐模式 - ${diffName} | ${wallText}`;
+            } else {
+                modeInfo.textContent = '天梯模式 - 困难 | 撞墙';
             }
         }
 
         function saveName() {
-            const name = document.getElementById('playerName').value.trim();
+            const name = document.getElementById('playerNameInput').value.trim();
             if (name) {
                 playerName = name;
                 localStorage.setItem('snakePlayerName', playerName);
                 userInfoElement.textContent = '玩家: ' + playerName;
                 nameModal.style.display = 'none';
-                startGame();
+                showStartModal();
             }
         }
 
@@ -438,6 +463,10 @@
                 nextDifficulty = 3;
                 nextWallMode = false;
             }
+            // 更新开始弹窗信息
+            if (startModal.style.display === 'flex') {
+                updateStartModalInfo();
+            }
         }
 
         function setDifficulty(level) {
@@ -445,6 +474,10 @@
             nextDifficulty = level;
             document.querySelectorAll('#diff1, #diff2, #diff3').forEach(btn => btn.classList.remove('active'));
             document.getElementById('diff' + level).classList.add('active');
+            // 更新开始弹窗信息
+            if (startModal.style.display === 'flex') {
+                updateStartModalInfo();
+            }
         }
 
         function setWallMode(enabled) {
@@ -452,11 +485,23 @@
             nextWallMode = enabled;
             document.querySelectorAll('#wallOff, #wallOn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(enabled ? 'wallOn' : 'wallOff').classList.add('active');
+            // 更新开始弹窗信息
+            if (startModal.style.display === 'flex') {
+                updateStartModalInfo();
+            }
         }
 
         function startGame() {
-            difficulty = nextDifficulty;
-            wallMode = nextWallMode;
+            startModal.style.display = 'none';
+            
+            // 根据当前游戏模式设置参数
+            if (gameMode === 'ranked') {
+                difficulty = 3;
+                wallMode = false;
+            } else {
+                difficulty = nextDifficulty;
+                wallMode = nextWallMode;
+            }
             const settings = difficultySettings[difficulty];
             speed = settings.baseSpeed;
             gameStarted = true;
@@ -658,28 +703,8 @@
         }
 
         function restartGame() {
-            if (gameMode === 'casual') {
-                difficulty = nextDifficulty;
-                wallMode = nextWallMode;
-            } else {
-                difficulty = 3;
-                wallMode = false;
-            }
-            
-            snake = [{ x: Math.floor(gameConfig.gridCount/2), y: Math.floor(gameConfig.gridCount/2) }];
-            food = { x: 10, y: 10 };
-            dx = 0;
-            dy = 0;
-            score = 0;
-            scoreElement.textContent = score;
-            
-            const settings = difficultySettings[difficulty];
-            speed = settings.baseSpeed;
-            
-            gameRunning = true;
-            gameOverScreen.style.display = 'none';
-            randomFood();
-            draw();
+            // 显示开始弹窗，让用户确认设置后再开始
+            showStartModal();
         }
 
         document.addEventListener('keydown', (e) => {
