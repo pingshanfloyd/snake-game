@@ -382,8 +382,6 @@
         const restartModal = document.getElementById('restartModal');
         const finalScoreElement = document.getElementById('finalScore');
         const casualSettings = document.getElementById('casualSettings');
-        const submitBtn = document.getElementById('submitBtn');
-        const restartBtn = document.getElementById('restartBtn');
 
         const isMobile = window.innerWidth < 768;
         
@@ -514,6 +512,7 @@
         }
 
         function startGame() {
+            // 重置所有游戏状态标志
             gameOverTriggered = false;
             
             // 隐藏所有弹窗
@@ -714,8 +713,6 @@
             // 显示重新开始弹窗
             updateRestartModalInfo();
             restartModal.style.display = 'flex';
-            submitBtn.style.display = 'block';
-            restartBtn.style.display = 'none';
         }
 
         function updateRestartModalInfo() {
