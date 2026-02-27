@@ -1,16 +1,21 @@
+// 使用 Node.js 运行时，不是 Edge Runtime
+export const config = {
+  runtime: 'nodejs'
+};
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const data = await request.json();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const data = req.body;
     
     const { error } = await supabase
       .from('scores')
@@ -26,13 +31,8 @@ export default async function handler(request) {
 
     if (error) throw error;
     
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
 }

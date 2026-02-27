@@ -1,11 +1,17 @@
+// 使用 Node.js 运行时，不是 Edge Runtime
+export const config = {
+  runtime: 'nodejs'
+};
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function handler(request) {
+export default async function handler(req, res) {
   try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     const { data, error } = await supabase
       .from('scores')
       .select('*')
@@ -25,13 +31,8 @@ export default async function handler(request) {
       timestamp: new Date(item.created_at).getTime()
     }));
 
-    return new Response(JSON.stringify(scores), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(scores);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
