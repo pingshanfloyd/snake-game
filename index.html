@@ -191,7 +191,8 @@
             border-radius: 15px;
             border: 2px solid #ff4444;
             display: none;
-            z-index: 10;
+            z-index: 100;
+            pointer-events: auto;
         }
         .game-over h2 {
             color: #ff4444;
@@ -334,7 +335,7 @@
             <div class="game-over" id="gameOver">
                 <h2>游戏结束</h2>
                 <p>最终得分: <span id="finalScore">0</span></p>
-                <button class="action-btn" onclick="submitScore()">
+                <button class="action-btn" onclick="submitScore()" style="cursor: pointer; pointer-events: auto;">
                     <span class="desktop-text">提交分数</span>
                     <span class="mobile-text">提交<br>分数</span>
                 </button>
