@@ -1,38 +1,40 @@
-export default async function handler(request) {
-  const FIREBASE_URL = process.env.FIREBASE_DATABASE_URL;
-  const FIREBASE_SECRET = process.env.FIREBASE_SECRET;
-  const DB_PATH = process.env.DB_PATH || 'scores';
+// 使用 Node.js 运行时，不是 Edge Runtime
+export const config = {
+  runtime: 'nodejs'
+};
 
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const ENV = process.env.ENV || 'production'; // 'preview' 或 'production'
+
+export default async function handler(req, res) {
   try {
-    const response = await fetch(`${FIREBASE_URL}/${DB_PATH}.json?auth=${FIREBASE_SECRET}`);
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
-    if (!response.ok) throw new Error('Failed to fetch');
-    
-    const data = await response.json();
-    
-    if (!data) return new Response(JSON.stringify([]), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const { data, error } = await supabase
+      .from('scores')
+      .select('*')
+      .eq('env', ENV) // 只查询当前环境的数据
+      .order('score', { ascending: false })
+      .limit(50);
 
-    // Convert to array and sort by score descending
-    const scores = Object.entries(data).map(([id, score]) => ({
-      id,
-      ...score
+    if (error) throw error;
+    
+    // 转换格式兼容前端
+    const scores = data.map(item => ({
+      name: item.name,
+      score: item.score,
+      difficulty: item.difficulty,
+      difficultyName: item.difficulty_name,
+      wallMode: item.wall_mode,
+      gameMode: item.game_mode,
+      timestamp: new Date(item.created_at).getTime()
     }));
 
-    // Sort by score descending
-    scores.sort((a, b) => b.score - a.score);
-
-    // Take top 50
-    const topScores = scores.slice(0, 50);
-
-    return new Response(JSON.stringify(topScores), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(scores);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
 }

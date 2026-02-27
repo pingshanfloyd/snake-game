@@ -1,20 +1,40 @@
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+// 使用 Node.js 运行时，不是 Edge Runtime
+export const config = {
+  runtime: 'nodejs'
+};
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const ENV = process.env.ENV || 'production'; // 'preview' 或 'production'
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const data = await request.json();
-    console.log('Received data:', data);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const data = req.body;
     
-    // 先不连接 Firebase，直接返回成功
-    return new Response(JSON.stringify({ success: true, received: data }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const { error } = await supabase
+      .from('scores')
+      .insert([{
+        name: data.name,
+        score: data.score,
+        difficulty: data.difficulty,
+        difficulty_name: data.difficultyName,
+        wall_mode: data.wallMode,
+        game_mode: data.gameMode,
+        env: ENV, // 区分 preview 和 production
+        created_at: new Date().toISOString()
+      }]);
+
+    if (error) throw error;
+    
+    return res.status(200).json({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(500).json({ error: error.message });
   }
 }
