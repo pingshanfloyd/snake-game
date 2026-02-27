@@ -335,18 +335,19 @@
             <div class="modal" id="startModal">
                 <h2>准备好了吗?</h2>
                 <div style="color: #888; font-size: 0.8rem; margin-bottom: 10px;">
-                    <div id="startModeInfo">娱乐模式 - 普通 | 穿墙</div>
+                    <div id="startModeInfo"></div>
                 </div>
                 <button class="action-btn" onclick="startGame()">开始游戏</button>
             </div>
             
-            <div class="game-over" id="gameOver">
+            <div class="modal" id="restartModal">
                 <h2>游戏结束</h2>
-                <p>最终得分: <span id="finalScore">0</span></p>
-                <button class="action-btn" onclick="submitScore()" style="cursor: pointer; pointer-events: auto;">
-                    <span class="desktop-text">提交分数</span>
-                    <span class="mobile-text">提交<br>分数</span>
-                </button>
+                <p style="color: #fff; font-size: 1rem; margin-bottom: 5px;">最终得分: <span id="finalScore">0</span></p>
+                <div style="color: #888; font-size: 0.75rem; margin-bottom: 15px;">
+                    <div id="restartModeInfo"></div>
+                </div>
+                <button class="action-btn" onclick="submitScore()" id="submitBtn">提交分数</button>
+                <button class="action-btn" onclick="startGame()" id="restartBtn" style="display: none; margin-top: 10px;">重新开始</button>
             </div>
         </div>
         
@@ -372,9 +373,11 @@
         const userInfoElement = document.getElementById('userInfo');
         const nameModal = document.getElementById('nameModal');
         const startModal = document.getElementById('startModal');
-        const gameOverScreen = document.getElementById('gameOver');
+        const restartModal = document.getElementById('restartModal');
         const finalScoreElement = document.getElementById('finalScore');
         const casualSettings = document.getElementById('casualSettings');
+        const submitBtn = document.getElementById('submitBtn');
+        const restartBtn = document.getElementById('restartBtn');
 
         const isMobile = window.innerWidth < 768;
         
@@ -492,9 +495,19 @@
         }
 
         function startGame() {
+            // 隐藏所有弹窗
             startModal.style.display = 'none';
+            restartModal.style.display = 'none';
             
-            // 根据当前游戏模式设置参数
+            // 重置游戏状态
+            snake = [{ x: Math.floor(gameConfig.gridCount/2), y: Math.floor(gameConfig.gridCount/2) }];
+            food = { x: 10, y: 10 };
+            dx = 0;
+            dy = 0;
+            score = 0;
+            scoreElement.textContent = score;
+            
+            // 根据当前游戏模式设置参数（使用用户最新选择的设置）
             if (gameMode === 'ranked') {
                 difficulty = 3;
                 wallMode = false;
@@ -502,11 +515,13 @@
                 difficulty = nextDifficulty;
                 wallMode = nextWallMode;
             }
+            
             const settings = difficultySettings[difficulty];
             speed = settings.baseSpeed;
             gameStarted = true;
             gameRunning = true;
             randomFood();
+            draw();
         }
 
         function randomFood() {
@@ -641,6 +656,7 @@
 
         function gameOver() {
             gameRunning = false;
+            gameStarted = false;
             finalScoreElement.textContent = score;
             
             if (score > personalHighScore) {
@@ -649,20 +665,25 @@
                 localStorage.setItem('snakePersonalHighScore', personalHighScore);
             }
             
-            gameOverScreen.style.display = 'block';
+            // 显示重新开始弹窗
+            updateRestartModalInfo();
+            restartModal.style.display = 'flex';
+            submitBtn.style.display = 'block';
+            restartBtn.style.display = 'none';
+        }
+
+        function updateRestartModalInfo() {
+            const modeInfo = document.getElementById('restartModeInfo');
+            if (gameMode === 'casual') {
+                const diffName = difficultySettings[nextDifficulty].name;
+                const wallText = nextWallMode ? '穿墙' : '撞墙';
+                modeInfo.textContent = `模式: 娱乐 - ${diffName} | ${wallText}`;
+            } else {
+                modeInfo.textContent = '模式: 天梯 - 困难 | 撞墙';
+            }
         }
 
         async function submitScore() {
-            console.log('=== submitScore START ===');
-            console.log('playerName:', playerName);
-            console.log('score:', score);
-            console.log('difficulty:', difficulty);
-            console.log('wallMode:', wallMode);
-            console.log('gameMode:', gameMode);
-            
-            // 立即隐藏弹窗，给用户反馈
-            gameOverScreen.style.display = 'none';
-            
             try {
                 const payload = {
                     name: playerName,
@@ -672,7 +693,6 @@
                     wallMode: wallMode,
                     gameMode: gameMode
                 };
-                console.log('Sending payload:', payload);
                 
                 const response = await fetch('/api/submit-score', {
                     method: 'POST',
@@ -680,31 +700,20 @@
                     body: JSON.stringify(payload)
                 });
                 
-                console.log('Response status:', response.status);
-                
                 if (response.ok) {
-                    const result = await response.json();
-                    console.log('Success:', result);
-                    restartGame();
+                    // 提交成功，隐藏提交按钮，显示重新开始按钮
+                    submitBtn.style.display = 'none';
+                    restartBtn.style.display = 'block';
                 } else {
-                    const errorText = await response.text();
-                    console.error('Server error:', errorText);
-                    alert('提交失败: ' + errorText);
+                    alert('提交失败');
                 }
             } catch (error) {
-                console.error('Submit error:', error);
                 alert('提交失败: ' + error.message);
             }
-            console.log('=== submitScore END ===');
         }
 
         function showLeaderboard() {
             window.location.href = '/leaderboard.html';
-        }
-
-        function restartGame() {
-            // 显示开始弹窗，让用户确认设置后再开始
-            showStartModal();
         }
 
         document.addEventListener('keydown', (e) => {
