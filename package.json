@@ -1,5 +1,9 @@
 {
   "name": "snake-game",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
+    "node-fetch": "^3.3.2"
+  }
 }
