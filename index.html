@@ -531,6 +531,9 @@
             speed = settings.baseSpeed;
             gameStarted = true;
             gameRunning = true;
+            pendingDx = 0;
+            pendingDy = 0;
+            directionChanged = false;
             randomFood();
             draw();
         }
@@ -548,15 +551,15 @@
             }
         }
 
+        let pendingDx = 0;
+        let pendingDy = 0;
+        let directionChanged = false;
+
         function setDirection(newDx, newDy) {
             if (!gameRunning || !gameStarted) return;
-            if ((newDx === 1 && dx === -1) || (newDx === -1 && dx === 1) ||
-                (newDy === 1 && dy === -1) || (newDy === -1 && dy === 1)) {
-                return;
-            }
-            if (dx === 0 && dy === 0 && newDx === 0 && newDy === 0) return;
-            dx = newDx;
-            dy = newDy;
+            // 记录待处理的方向，在下次移动时应用
+            pendingDx = newDx;
+            pendingDy = newDy;
         }
 
         function handleWallWrap(head) {
@@ -634,7 +637,19 @@
 
         function update() {
             if (!gameRunning || !gameStarted) return;
-            if (dx === 0 && dy === 0) return;
+            if (dx === 0 && dy === 0 && pendingDx === 0 && pendingDy === 0) return;
+
+            // 应用待处理的方向（只处理最后一次按键）
+            if (pendingDx !== 0 || pendingDy !== 0) {
+                // 检查是否反向
+                if (!((pendingDx === 1 && dx === -1) || (pendingDx === -1 && dx === 1) ||
+                      (pendingDy === 1 && dy === -1) || (pendingDy === -1 && dy === 1))) {
+                    dx = pendingDx;
+                    dy = pendingDy;
+                }
+                pendingDx = 0;
+                pendingDy = 0;
+            }
 
             let head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
