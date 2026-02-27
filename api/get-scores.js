@@ -1,9 +1,10 @@
 export default async function handler(request) {
   const FIREBASE_URL = process.env.FIREBASE_DATABASE_URL;
   const FIREBASE_SECRET = process.env.FIREBASE_SECRET;
+  const DB_PATH = process.env.DB_PATH || 'scores';
 
   try {
-    const response = await fetch(`${FIREBASE_URL}/scores.json?auth=${FIREBASE_SECRET}`);
+    const response = await fetch(`${FIREBASE_URL}/${DB_PATH}.json?auth=${FIREBASE_SECRET}`);
     
     if (!response.ok) throw new Error('Failed to fetch');
     

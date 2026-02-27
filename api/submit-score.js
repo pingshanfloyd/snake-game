@@ -5,11 +5,12 @@ export default async function handler(request) {
 
   const FIREBASE_URL = process.env.FIREBASE_DATABASE_URL;
   const FIREBASE_SECRET = process.env.FIREBASE_SECRET;
+  const DB_PATH = process.env.DB_PATH || 'scores';
 
   try {
     const data = await request.json();
     
-    const response = await fetch(`${FIREBASE_URL}/scores.json?auth=${FIREBASE_SECRET}`, {
+    const response = await fetch(`${FIREBASE_URL}/${DB_PATH}.json?auth=${FIREBASE_SECRET}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
