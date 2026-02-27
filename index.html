@@ -13,14 +13,14 @@
         body {
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             touch-action: none;
-            padding-top: calc(env(safe-area-inset-top) + 10px);
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-top: max(env(safe-area-inset-top), 5px);
+            padding-bottom: max(env(safe-area-inset-bottom), 5px);
         }
         .game-container { 
             text-align: center;
@@ -29,6 +29,10 @@
             align-items: center;
             width: 100%;
             max-width: 600px;
+            height: 100vh;
+            height: 100dvh; /* 动态视口高度，适配移动端 */
+            justify-content: center;
+            padding: 5px;
         }
         h1 {
             color: #00ff88;
@@ -346,8 +350,7 @@
                 <div style="color: #888; font-size: 0.75rem; margin-bottom: 15px;">
                     <div id="restartModeInfo"></div>
                 </div>
-                <button class="action-btn" onclick="submitScore()" id="submitBtn">提交分数</button>
-                <button class="action-btn" onclick="startGame()" id="restartBtn" style="display: none; margin-top: 10px;">重新开始</button>
+                <button class="action-btn" onclick="submitAndRestart()" id="submitRestartBtn">提交并重新开始</button>
             </div>
         </div>
         
@@ -413,6 +416,10 @@
         let nextDifficulty = 2;
         let nextWallMode = true;
         let gameMode = 'casual';
+        // 记录上一轮游戏的模式设置（用于提交分数）
+        let lastGameDifficulty = 2;
+        let lastGameWallMode = true;
+        let lastGameMode = 'casual';
         let playerName = localStorage.getItem('snakePlayerName') || '';
         let personalHighScore = localStorage.getItem('snakePersonalHighScore') || 0;
         
@@ -517,6 +524,11 @@
             dy = 0;
             score = 0;
             scoreElement.textContent = score;
+            
+            // 保存上一轮游戏的模式设置（用于提交分数）
+            lastGameDifficulty = difficulty;
+            lastGameWallMode = wallMode;
+            lastGameMode = gameMode;
             
             // 根据当前游戏模式设置参数（使用用户最新选择的设置）
             if (gameMode === 'ranked') {
@@ -705,32 +717,26 @@
 
         function updateRestartModalInfo() {
             const modeInfo = document.getElementById('restartModeInfo');
-            if (gameMode === 'casual') {
-                const diffName = difficultySettings[nextDifficulty].name;
-                const wallText = nextWallMode ? '穿墙' : '撞墙';
-                modeInfo.textContent = `模式: 娱乐 - ${diffName} | ${wallText}`;
+            // 显示上一轮游戏的模式（用于提交分数）
+            if (lastGameMode === 'casual') {
+                const diffName = difficultySettings[lastGameDifficulty].name;
+                const wallText = lastGameWallMode ? '穿墙' : '撞墙';
+                modeInfo.textContent = `上轮: 娱乐 - ${diffName} | ${wallText}`;
             } else {
-                modeInfo.textContent = '模式: 天梯 - 困难 | 撞墙';
+                modeInfo.textContent = '上轮: 天梯 - 困难 | 撞墙';
             }
         }
 
-        async function submitScore() {
-            console.log('submitScore clicked');
-            console.log('playerName:', playerName);
-            console.log('score:', score);
-            console.log('submitBtn:', submitBtn);
-            console.log('restartBtn:', restartBtn);
-            
+        async function submitAndRestart() {
             try {
                 const payload = {
                     name: playerName,
                     score: score,
-                    difficulty: difficulty,
-                    difficultyName: difficultySettings[difficulty].name,
-                    wallMode: wallMode,
-                    gameMode: gameMode
+                    difficulty: lastGameDifficulty,
+                    difficultyName: difficultySettings[lastGameDifficulty].name,
+                    wallMode: lastGameWallMode,
+                    gameMode: lastGameMode
                 };
-                console.log('payload:', payload);
                 
                 const response = await fetch('/api/submit-score', {
                     method: 'POST',
@@ -738,17 +744,13 @@
                     body: JSON.stringify(payload)
                 });
                 
-                console.log('response:', response);
-                
                 if (response.ok) {
-                    console.log('submit success, hiding submitBtn, showing restartBtn');
-                    submitBtn.style.display = 'none';
-                    restartBtn.style.display = 'block';
+                    // 提交成功，直接开始新游戏
+                    startGame();
                 } else {
                     alert('提交失败');
                 }
             } catch (error) {
-                console.error('error:', error);
                 alert('提交失败: ' + error.message);
             }
         }
