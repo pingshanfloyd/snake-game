@@ -608,40 +608,49 @@
         }
 
         async function submitScore() {
-            console.log('submitScore called');
+            console.log('=== submitScore START ===');
             console.log('playerName:', playerName);
             console.log('score:', score);
+            console.log('difficulty:', difficulty);
+            console.log('wallMode:', wallMode);
             console.log('gameMode:', gameMode);
             
+            // 立即隐藏弹窗，给用户反馈
+            gameOverScreen.style.display = 'none';
+            
             try {
+                const payload = {
+                    name: playerName,
+                    score: score,
+                    difficulty: difficulty,
+                    difficultyName: difficultySettings[difficulty].name,
+                    wallMode: wallMode,
+                    gameMode: gameMode
+                };
+                console.log('Sending payload:', payload);
+                
                 const response = await fetch('/api/submit-score', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: playerName,
-                        score: score,
-                        difficulty: difficulty,
-                        difficultyName: difficultySettings[difficulty].name,
-                        wallMode: wallMode,
-                        gameMode: gameMode
-                    })
+                    body: JSON.stringify(payload)
                 });
                 
-                console.log('response:', response);
+                console.log('Response status:', response.status);
                 
                 if (response.ok) {
-                    alert('分数提交成功！');
-                    gameOverScreen.style.display = 'none';
+                    const result = await response.json();
+                    console.log('Success:', result);
                     restartGame();
                 } else {
                     const errorText = await response.text();
                     console.error('Server error:', errorText);
-                    throw new Error('提交失败: ' + errorText);
+                    alert('提交失败: ' + errorText);
                 }
             } catch (error) {
                 console.error('Submit error:', error);
                 alert('提交失败: ' + error.message);
             }
+            console.log('=== submitScore END ===');
         }
 
         function showLeaderboard() {
