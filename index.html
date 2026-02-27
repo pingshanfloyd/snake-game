@@ -684,6 +684,12 @@
         }
 
         async function submitScore() {
+            console.log('submitScore clicked');
+            console.log('playerName:', playerName);
+            console.log('score:', score);
+            console.log('submitBtn:', submitBtn);
+            console.log('restartBtn:', restartBtn);
+            
             try {
                 const payload = {
                     name: playerName,
@@ -693,6 +699,7 @@
                     wallMode: wallMode,
                     gameMode: gameMode
                 };
+                console.log('payload:', payload);
                 
                 const response = await fetch('/api/submit-score', {
                     method: 'POST',
@@ -700,14 +707,17 @@
                     body: JSON.stringify(payload)
                 });
                 
+                console.log('response:', response);
+                
                 if (response.ok) {
-                    // 提交成功，隐藏提交按钮，显示重新开始按钮
+                    console.log('submit success, hiding submitBtn, showing restartBtn');
                     submitBtn.style.display = 'none';
                     restartBtn.style.display = 'block';
                 } else {
                     alert('提交失败');
                 }
             } catch (error) {
+                console.error('error:', error);
                 alert('提交失败: ' + error.message);
             }
         }
