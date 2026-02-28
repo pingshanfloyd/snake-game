@@ -28,7 +28,7 @@ snake-game/
 部署完成后，进入项目设置：
 - Settings → Environment Variables
 - 添加以下变量：
-  - `FIREBASE_DATABASE_URL`: `https://snake-game-a7783-default-rtdb.asia-southeast1.firebasedatabase.app`
+  - `FIREBASE_DATABASE_URL`: `https://xxxxxxxxxxxxxx.firebasedatabase.app`
   - `FIREBASE_SECRET`: 你的 Firebase 数据库密钥
 
 #### 获取 Firebase Secret:
